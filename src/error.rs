@@ -5,9 +5,6 @@ pub enum CliError {
     #[error("Authentication error: {0}")]
     Auth(String),
 
-    #[error("Client initialization error: {0}")]
-    ClientInit(String),
-
     #[error("API error: {0}")]
     Api(String),
 

@@ -1,5 +1,5 @@
 use crate::cli::Network;
-use crate::client::{send_info_request, user_address};
+use crate::client::{resolve_coin_and_dex, send_info_request, user_address};
 use crate::error::CliError;
 use crate::output::{new_table, print_json, print_table};
 
@@ -9,10 +9,12 @@ pub async fn run_funding(
     coin: &str,
     start: u64,
     end: Option<u64>,
+    dex: Option<&str>,
 ) -> Result<(), CliError> {
+    let (_, full_coin) = resolve_coin_and_dex(dex, coin);
     let mut request = serde_json::json!({
         "type": "fundingHistory",
-        "coin": coin,
+        "coin": full_coin,
         "startTime": start,
     });
     if let Some(end_time) = end {
@@ -54,7 +56,7 @@ pub async fn run_user_funding(
     let address = user_address()?;
     let mut request = serde_json::json!({
         "type": "userFunding",
-        "user": format!("{:?}", address),
+        "user": address.to_string(),
         "startTime": start,
     });
     if let Some(end_time) = end {

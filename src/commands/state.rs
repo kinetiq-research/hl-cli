@@ -64,23 +64,19 @@ pub struct CumFunding {
     pub since_change: String,
 }
 
-// Token balance types
-#[derive(Deserialize, Debug, serde::Serialize)]
-#[serde(rename_all = "camelCase")]
-pub struct TokenBalance {
-    pub coin: String,
-    pub hold: String,
-    pub total: String,
-    pub entry_ntl: Option<String>,
-    pub token: Option<u32>,
-}
-
-pub async fn run_state(network: &Network, json: bool) -> Result<(), CliError> {
+pub async fn run_state(
+    network: &Network,
+    json: bool,
+    dex: Option<&str>,
+) -> Result<(), CliError> {
     let address = user_address()?;
-    let request = serde_json::json!({
+    let mut request = serde_json::json!({
         "type": "clearinghouseState",
-        "user": format!("{:?}", address),
+        "user": address.to_string(),
     });
+    if let Some(d) = dex {
+        request["dex"] = serde_json::json!(d);
+    }
     let response: UserStateResponse = send_info_request(network, &request).await?;
 
     if json {
@@ -98,12 +94,19 @@ pub async fn run_state(network: &Network, json: bool) -> Result<(), CliError> {
     Ok(())
 }
 
-pub async fn run_positions(network: &Network, json: bool) -> Result<(), CliError> {
+pub async fn run_positions(
+    network: &Network,
+    json: bool,
+    dex: Option<&str>,
+) -> Result<(), CliError> {
     let address = user_address()?;
-    let request = serde_json::json!({
+    let mut request = serde_json::json!({
         "type": "clearinghouseState",
-        "user": format!("{:?}", address),
+        "user": address.to_string(),
     });
+    if let Some(d) = dex {
+        request["dex"] = serde_json::json!(d);
+    }
     let response: UserStateResponse = send_info_request(network, &request).await?;
 
     // Filter to non-zero positions
@@ -163,7 +166,7 @@ pub async fn run_balance(network: &Network, json: bool) -> Result<(), CliError> 
     let address = user_address()?;
     let request = serde_json::json!({
         "type": "spotClearinghouseState",
-        "user": format!("{:?}", address),
+        "user": address.to_string(),
     });
 
     let response: serde_json::Value = send_info_request(network, &request).await?;

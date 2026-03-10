@@ -12,6 +12,18 @@ pub struct Cli {
     #[arg(long, global = true)]
     pub json: bool,
 
+    /// HIP-3 builder-deployed perp dex (e.g. xyz, km, flx)
+    #[arg(long, global = true, env = "HL_DEX")]
+    pub dex: Option<String>,
+
+    /// Skip confirmation prompts for write operations
+    #[arg(long, short = 'y', global = true)]
+    pub yes: bool,
+
+    /// Watch mode: re-run every N seconds (for read commands)
+    #[arg(long, short = 'w', global = true)]
+    pub watch: Option<u64>,
+
     #[command(subcommand)]
     pub command: Command,
 }
@@ -49,10 +61,13 @@ pub enum Command {
     /// Show token balances
     Balance,
 
-    /// Show L2 order book for a coin
+    /// Show L2 order book for a coin (with depth bars)
     Book {
         /// Coin symbol (e.g. ETH, BTC)
         coin: String,
+        /// Number of levels to show (default 10)
+        #[arg(long, default_value = "10")]
+        levels: usize,
     },
 
     /// Show mid prices for all assets
@@ -63,6 +78,38 @@ pub enum Command {
 
     /// Show spot exchange metadata
     SpotMeta,
+
+    /// List HIP-3 builder-deployed perp dexes
+    Dexes,
+
+    /// Install the Claude Code skill (~/.claude/commands/hl.md)
+    InstallSkill {
+        /// Also install into the current project (.claude/commands/hl.md)
+        #[arg(long)]
+        project: bool,
+        /// Overwrite existing skill file
+        #[arg(long)]
+        force: bool,
+    },
+
+    /// Initialize ~/.hl.env and install the Claude Code skill
+    Init {
+        /// Private key (API Wallet key from Hyperliquid UI)
+        #[arg(long)]
+        private_key: Option<String>,
+        /// Wallet address for read-only operations
+        #[arg(long)]
+        address: Option<String>,
+        /// Default network
+        #[arg(long, value_enum)]
+        network: Option<Network>,
+        /// Overwrite existing files
+        #[arg(long)]
+        force: bool,
+        /// Skip installing the Claude Code skill
+        #[arg(long)]
+        no_skill: bool,
+    },
 
     /// Show funding rate history for a coin
     Funding {
@@ -138,11 +185,43 @@ pub enum Command {
         #[arg(long)]
         amount: Decimal,
     },
+
+    // === NEW COMMANDS ===
+
+    /// Check API health / connectivity status
+    Status,
+
+    /// Show bid-ask spread for a coin
+    Spread {
+        /// Coin symbol (e.g. ETH, BTC)
+        coin: String,
+    },
+
+    /// Show PnL summary across all positions
+    Pnl,
+
+    /// Show open interest for a coin or all coins
+    Oi {
+        /// Coin symbol (optional, shows all if omitted)
+        coin: Option<String>,
+    },
+
+    /// Search/filter assets by name
+    Search {
+        /// Search query (case-insensitive substring match)
+        query: String,
+    },
+
+    /// Interactive REPL shell
+    Shell,
+
+    /// Self-upgrade hl binary from source
+    Upgrade,
 }
 
 #[derive(Subcommand)]
 pub enum OrderAction {
-    /// Place a new order
+    /// Place a new limit order
     Place {
         /// Coin symbol (e.g. ETH, BTC)
         coin: String,
@@ -175,6 +254,34 @@ pub enum OrderAction {
         trigger_is_market: bool,
     },
 
+    /// Place a market order (IOC at slippage-adjusted price)
+    Market {
+        /// Coin symbol (e.g. ETH, BTC)
+        coin: String,
+        /// Side: buy or sell
+        #[arg(value_enum)]
+        side: Side,
+        /// Order size in coin units
+        #[arg(long, group = "sizing")]
+        size: Option<Decimal>,
+        /// Order size in USD notional
+        #[arg(long, group = "sizing")]
+        amount: Option<Decimal>,
+        /// Slippage tolerance as percentage (default 1.0 = 1%)
+        #[arg(long, default_value = "1.0")]
+        slippage: Decimal,
+        /// Reduce-only
+        #[arg(long)]
+        reduce_only: bool,
+    },
+
+    /// Place batch orders from JSON
+    Batch {
+        /// JSON array of orders: [{"coin":"ETH","side":"buy","size":"0.1","price":"3000"}, ...]
+        /// Or path to a JSON file (prefix with @)
+        orders_json: String,
+    },
+
     /// Cancel an order by order ID
     Cancel {
         /// Coin symbol
@@ -191,6 +298,12 @@ pub enum OrderAction {
         /// Client order ID
         #[arg(long)]
         cloid: String,
+    },
+
+    /// Cancel all open orders (optionally for a specific coin)
+    CancelAll {
+        /// Coin symbol (optional - cancels all if omitted)
+        coin: Option<String>,
     },
 
     /// Modify an existing order

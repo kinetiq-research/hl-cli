@@ -2,10 +2,17 @@ use hl_rs::{BatchModify, LimitOrderType, OrderType, OrderWire, Tif};
 
 use crate::cli::{Network, OrderAction, Side, TifArg};
 use crate::client::{exchange_client, resolve_asset_index};
+use crate::confirm::confirm_action;
 use crate::error::CliError;
 use crate::output::print_json;
 
-pub async fn run(network: &Network, json: bool, action: OrderAction) -> Result<(), CliError> {
+pub async fn run(
+    network: &Network,
+    json: bool,
+    yes: bool,
+    action: OrderAction,
+    dex: Option<&str>,
+) -> Result<(), CliError> {
     let OrderAction::Modify {
         oid,
         coin,
@@ -20,7 +27,7 @@ pub async fn run(network: &Network, json: bool, action: OrderAction) -> Result<(
         unreachable!()
     };
 
-    let asset_index = resolve_asset_index(network, &coin).await?;
+    let asset_index = resolve_asset_index(network, dex, &coin).await?;
     let is_buy = matches!(side, Side::Buy);
 
     let tif_val = match tif {
@@ -28,6 +35,12 @@ pub async fn run(network: &Network, json: bool, action: OrderAction) -> Result<(
         TifArg::Ioc => Tif::Ioc,
         TifArg::Alo => Tif::Alo,
     };
+
+    let side_str = if is_buy { "BUY" } else { "SELL" };
+    confirm_action(
+        &format!("Modify order {oid}: {side_str} {size} {coin} @ {price}"),
+        yes,
+    )?;
 
     let order = OrderWire {
         a: asset_index,
@@ -47,9 +60,7 @@ pub async fn run(network: &Network, json: bool, action: OrderAction) -> Result<(
     if json {
         print_json(&response)?;
     } else {
-        let side_str = if is_buy { "BUY" } else { "SELL" };
         println!("Order {oid} modified: {side_str} {size} {coin} @ {price}");
-        println!("Response: {:?}", response);
     }
     Ok(())
 }

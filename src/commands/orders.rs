@@ -7,7 +7,7 @@ pub async fn run_orders(network: &Network, json: bool) -> Result<(), CliError> {
     let address = user_address()?;
     let request = serde_json::json!({
         "type": "openOrders",
-        "user": format!("{:?}", address),
+        "user": address.to_string(),
     });
     let response: serde_json::Value = send_info_request(network, &request).await?;
 
@@ -51,7 +51,7 @@ pub async fn run_order_status(
     let address = user_address()?;
     let request = serde_json::json!({
         "type": "orderStatus",
-        "user": format!("{:?}", address),
+        "user": address.to_string(),
         "oid": oid,
     });
     let response: serde_json::Value = send_info_request(network, &request).await?;
@@ -83,7 +83,7 @@ pub async fn run_fills(network: &Network, json: bool) -> Result<(), CliError> {
     let address = user_address()?;
     let request = serde_json::json!({
         "type": "userFills",
-        "user": format!("{:?}", address),
+        "user": address.to_string(),
     });
     let response: serde_json::Value = send_info_request(network, &request).await?;
 
@@ -123,7 +123,7 @@ pub async fn run_historical_orders(network: &Network, json: bool) -> Result<(), 
     let address = user_address()?;
     let request = serde_json::json!({
         "type": "historicalOrders",
-        "user": format!("{:?}", address),
+        "user": address.to_string(),
     });
     let response: serde_json::Value = send_info_request(network, &request).await?;
 
