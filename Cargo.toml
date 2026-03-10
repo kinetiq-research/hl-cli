@@ -1,0 +1,23 @@
+[package]
+name = "hl-cli"
+version = "0.1.0"
+edition = "2021"
+description = "CLI tool for Hyperliquid using hl-rs SDK"
+
+[[bin]]
+name = "hl"
+path = "src/main.rs"
+
+[dependencies]
+hl-rs = { git = "https://github.com/kinetiq-research/hl-rs", branch = "main" }
+alloy = { version = "1.1", features = ["signers"] }
+clap = { version = "4", features = ["derive", "env"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+rust_decimal = { version = "1.36", features = ["serde-with-str"] }
+rust_decimal_macros = "1.36"
+comfy-table = "7"
+thiserror = "2"
+reqwest = { version = "0.12", features = ["json"] }
+dotenvy = "0.15"
